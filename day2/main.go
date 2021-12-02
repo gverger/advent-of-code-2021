@@ -5,8 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
+
+	m "github.com/gverger/advent2021/day2/moves"
+	"github.com/gverger/advent2021/day2/part1"
+	"github.com/gverger/advent2021/day2/part2"
 )
 
 var inputFile = flag.String("input", "input.txt", "the input file")
@@ -36,14 +39,16 @@ func run(input string) error {
 		return errors.New("no line")
 	}
 
-	moves, err := movesFromInput(lines)
+	moves, err := m.FromInput(lines)
 	if err != nil {
 		return err
 	}
 
-	end := Pos{X: 0, Y: 0}.Apply(moves)
+	arrival1 := part1.NewPos().Apply(moves)
+	fmt.Printf("Result part 2: %d (x=%d, y=%d)\n", arrival1.X*arrival1.Y, arrival1.X, arrival1.Y)
 
-	fmt.Printf("Result: %d (x=%d, y=%d)", end.X*end.Y, end.X, end.Y)
+	arrival2 := part2.NewPos().Apply(moves)
+	fmt.Printf("Result part 2: %d (x=%d, y=%d, aim=%d)\n", arrival2.X*arrival2.Y, arrival2.X, arrival2.Y, arrival2.Aim)
 
 	return nil
 }
@@ -57,73 +62,4 @@ func readLines(fileName string) ([]string, error) {
 	data := strings.TrimSpace(string(raw))
 
 	return strings.Split(data, "\n"), nil
-}
-
-type Pos struct {
-	X int
-	Y int
-}
-
-func (p Pos) Apply(moves []Move) Pos {
-	newPos := Pos{X: p.X, Y: p.Y}
-
-	for _, m := range moves {
-		switch m.Dir {
-		case Up:
-			newPos.Y -= m.Units
-		case Down:
-			newPos.Y += m.Units
-		case Forward:
-			newPos.X += m.Units
-		}
-	}
-
-	return newPos
-}
-
-func movesFromInput(lines []string) ([]Move, error) {
-	moves := make([]Move, 0, len(lines))
-
-	for _, l := range lines {
-		m, err := moveFromInput(l)
-		if err != nil {
-			return moves, err
-		}
-		moves = append(moves, m)
-	}
-
-	return moves, nil
-}
-
-type Direction string
-
-const (
-	Forward Direction = "forward"
-	Up      Direction = "up"
-	Down    Direction = "down"
-)
-
-func (dir Direction) IsValid() bool {
-	return dir == Forward || dir == Up || dir == Down
-}
-
-type Move struct {
-	Dir   Direction
-	Units int
-}
-
-func moveFromInput(line string) (Move, error) {
-	parts := strings.Split(line, " ")
-	if len(parts) != 2 {
-		return Move{}, fmt.Errorf("not a valid input: %q", line)
-	}
-	dir := Direction(parts[0])
-	if !dir.IsValid() {
-		return Move{}, fmt.Errorf("not a valid direction: %q", dir)
-	}
-	units, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return Move{}, err
-	}
-	return Move{Dir: dir, Units: units}, nil
 }
