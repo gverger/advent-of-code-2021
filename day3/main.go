@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gverger/advent2021/utils"
+	"github.com/gverger/advent2021/utils/filters"
 )
 
 func main() {
@@ -13,7 +14,7 @@ func main() {
 }
 
 func run(lines []string) error {
-	values, err := StringSlice(lines).mapToCounts()
+	values, err := StringSlice(lines).counts()
 	if err != nil {
 		return fmt.Errorf("cannot convert to counts: %w", err)
 	}
@@ -55,20 +56,9 @@ func (c Counts) Epsilon() int {
 
 type StringSlice []string
 
-func (data StringSlice) mapToCounts() (Counts, error) {
-	counts := make([]int, 0)
-	for _, c := range data[0] {
-		switch c {
-		case '1':
-			counts = append(counts, 1)
-		case '0':
-			counts = append(counts, -1)
-		default:
-			return nil, errors.New("unauthorized character")
-		}
-	}
-
-	for _, text := range data[1:] {
+func (data StringSlice) counts() (Counts, error) {
+	counts := make([]int, len(data[0]))
+	for _, text := range data {
 		for i, c := range text {
 			switch c {
 			case '1':
@@ -98,43 +88,27 @@ func (data StringSlice) Filter(sel func(string) bool) StringSlice {
 }
 
 func (data StringSlice) Oxygen() int {
+	return data.gaz(func(char, filter byte) bool { return char == filter })
+}
+
+func (data StringSlice) CO2() int {
+	return data.gaz(func(char, filter byte) bool { return char != filter })
+}
+
+func (data StringSlice) gaz(compareChar func(char byte, filter byte) bool) int {
 	d := make(StringSlice, len(data))
 	copy(d, data)
 	nb := len(d[0])
 
 	for i := 0; i < nb; i++ {
-		counts, _ := d.mapToCounts()
+		counts, _ := d.counts()
 		c := counts[i]
 		filter := '1'
 		if c < 0 {
 			filter = '0'
 		}
-		d = d.Filter(func(s string) bool {
-			return s[i] == byte(filter)
-		})
-		if len(d) == 1 {
-			res, _ := strconv.ParseInt(d[0], 2, 0)
-			return int(res)
-		}
-	}
-
-	return -1
-}
-
-func (data StringSlice) CO2() int {
-	d := make(StringSlice, len(data))
-	copy(d, data)
-	nb := len(d[0])
-
-	for i := 0; i < nb; i++ {
-		counts, _ := d.mapToCounts()
-		c := counts[i]
-		filter := '1'
-		if c >= 0 {
-			filter = '0'
-		}
-		d = d.Filter(func(s string) bool {
-			return s[i] == byte(filter)
+		d = filters.Strings(d).KeepIf(func(s string) bool {
+			return compareChar(s[i], byte(filter))
 		})
 		if len(d) == 1 {
 			res, _ := strconv.ParseInt(d[0], 2, 0)
