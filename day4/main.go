@@ -1,41 +1,19 @@
 package main
 
 import (
-	"errors"
-	"flag"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
+
+	"github.com/gverger/advent2021/utils"
+	"github.com/gverger/advent2021/utils/maps"
 )
 
-var inputFile = flag.String("input", "input.txt", "the input file")
-
 func main() {
-	flag.Parse()
-
-	if inputFile == nil {
-		fmt.Println("ERROR: empty input name")
-		os.Exit(1)
-	}
-
-	err := run(*inputFile)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		os.Exit(2)
-	}
+	utils.Main(run)
 }
 
-func run(input string) error {
-	lines, err := readLines(input)
-	if err != nil {
-		return fmt.Errorf("cannot read lines: %w", err)
-	}
-
-	if len(lines) == 0 {
-		return errors.New("no line")
-	}
-
+func run(lines []string) error {
 	choices, err := choicesFrom(lines[0])
 	if err != nil {
 		return err
@@ -80,17 +58,6 @@ func part2Score(boards []Board, choices []int) int {
 	}
 
 	return worstScore
-}
-
-func readLines(fileName string) ([]string, error) {
-	raw, err := os.ReadFile(fileName)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read %q: %w", fileName, err)
-	}
-
-	data := strings.TrimSpace(string(raw))
-
-	return strings.Split(data, "\n"), nil
 }
 
 func choicesFrom(line string) ([]int, error) {
@@ -172,7 +139,7 @@ func NewBoard(lines []string) (Board, error) {
 	}
 
 	for i, l := range lines {
-		numbers, err := StringSlice(strings.Fields(l)).mapToInts()
+		numbers, err := maps.Strings(strings.Fields(l)).ToInts()
 		if err != nil {
 			return Board{}, fmt.Errorf("cannot get numbers for %q: %w", l, err)
 		}
@@ -202,20 +169,4 @@ func boardsFrom(lines []string) ([]Board, error) {
 	}
 
 	return boards, nil
-}
-
-type StringSlice []string
-
-func (data StringSlice) mapToInts() ([]int, error) {
-	values := make([]int, 0, len(data))
-	for _, text := range data {
-		current, err := strconv.Atoi(text)
-		if err != nil {
-			return nil, err
-		}
-
-		values = append(values, current)
-	}
-
-	return values, nil
 }

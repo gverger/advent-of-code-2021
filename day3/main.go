@@ -2,40 +2,17 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
-	"os"
 	"strconv"
-	"strings"
+
+	"github.com/gverger/advent2021/utils"
 )
 
-var inputFile = flag.String("input", "input.txt", "the input file")
-
 func main() {
-	flag.Parse()
-
-	if inputFile == nil {
-		fmt.Println("ERROR: empty input name")
-		os.Exit(1)
-	}
-
-	err := run(*inputFile)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		os.Exit(2)
-	}
+	utils.Main(run)
 }
 
-func run(input string) error {
-	lines, err := readLines(input)
-	if err != nil {
-		return fmt.Errorf("cannot read lines: %w", err)
-	}
-
-	if len(lines) == 0 {
-		return errors.New("no line")
-	}
-
+func run(lines []string) error {
 	values, err := StringSlice(lines).mapToCounts()
 	if err != nil {
 		return fmt.Errorf("cannot convert to counts: %w", err)
@@ -48,17 +25,6 @@ func run(input string) error {
 	fmt.Println("Oxygen x CO2: ", StringSlice(lines).Oxygen()*StringSlice(lines).CO2())
 
 	return nil
-}
-
-func readLines(fileName string) ([]string, error) {
-	raw, err := os.ReadFile(fileName)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read %q: %w", fileName, err)
-	}
-
-	data := strings.TrimSpace(string(raw))
-
-	return strings.Split(data, "\n"), nil
 }
 
 type Counts []int

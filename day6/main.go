@@ -1,41 +1,18 @@
 package main
 
 import (
-	"errors"
-	"flag"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
+
+	"github.com/gverger/advent2021/utils"
+	"github.com/gverger/advent2021/utils/maps"
 )
 
-var inputFile = flag.String("input", "input.txt", "the input file")
-
 func main() {
-	flag.Parse()
-
-	if inputFile == nil {
-		fmt.Println("ERROR: empty input name")
-		os.Exit(1)
-	}
-
-	err := run(*inputFile)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		os.Exit(2)
-	}
+	utils.Main(run)
 }
 
-func run(input string) error {
-	lines, err := readLines(input)
-	if err != nil {
-		return fmt.Errorf("cannot read lines: %w", err)
-	}
-
-	if len(lines) == 0 {
-		return errors.New("no line")
-	}
-
+func run(lines []string) error {
 	timers := timersFromInput(lines[0])
 
 	school := NewSchool()
@@ -93,23 +70,7 @@ func (s *School) NextDay() {
 
 func timersFromInput(input string) []int {
 	numbers := strings.Split(input, ",")
-
-	timers := make([]int, len(numbers))
-	for i, s := range numbers {
-		n, _ := strconv.Atoi(s)
-		timers[i] = n
-	}
+	timers, _ := maps.Strings(numbers).ToInts()
 
 	return timers
-}
-
-func readLines(fileName string) ([]string, error) {
-	raw, err := os.ReadFile(fileName)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read %q: %w", fileName, err)
-	}
-
-	data := strings.TrimSpace(string(raw))
-
-	return strings.Split(data, "\n"), nil
 }

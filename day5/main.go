@@ -1,41 +1,18 @@
 package main
 
 import (
-	"errors"
-	"flag"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
+
+	"github.com/gverger/advent2021/utils"
+	"github.com/gverger/advent2021/utils/maps"
 )
 
-var inputFile = flag.String("input", "input.txt", "the input file")
-
 func main() {
-	flag.Parse()
-
-	if inputFile == nil {
-		fmt.Println("ERROR: empty input name")
-		os.Exit(1)
-	}
-
-	err := run(*inputFile)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		os.Exit(2)
-	}
+	utils.Main(run)
 }
 
-func run(input string) error {
-	lines, err := readLines(input)
-	if err != nil {
-		return fmt.Errorf("cannot read lines: %w", err)
-	}
-
-	if len(lines) == 0 {
-		return errors.New("no line")
-	}
-
+func run(lines []string) error {
 	vents := ventsFromInput(lines)
 	// vents = part1Filter(vents)
 
@@ -100,8 +77,8 @@ func ventsFromInput(input []string) []Vent {
 func ventFromInput(input string) Vent {
 	parts := strings.Fields(input)
 
-	start, _ := StringSlice(strings.Split(parts[0], ",")).mapToInts()
-	end, _ := StringSlice(strings.Split(parts[2], ",")).mapToInts()
+	start, _ := maps.Strings(strings.Split(parts[0], ",")).ToInts()
+	end, _ := maps.Strings(strings.Split(parts[2], ",")).ToInts()
 
 	v := Vent{}
 	v.startX, v.endX = start[0], end[0]
@@ -145,33 +122,6 @@ func (v Vent) IsHorizontal() bool {
 
 func (v Vent) IsVertical() bool {
 	return v.startX == v.endX
-}
-
-func readLines(fileName string) ([]string, error) {
-	raw, err := os.ReadFile(fileName)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read %q: %w", fileName, err)
-	}
-
-	data := strings.TrimSpace(string(raw))
-
-	return strings.Split(data, "\n"), nil
-}
-
-type StringSlice []string
-
-func (data StringSlice) mapToInts() ([]int, error) {
-	values := make([]int, 0, len(data))
-	for _, text := range data {
-		current, err := strconv.Atoi(text)
-		if err != nil {
-			return nil, err
-		}
-
-		values = append(values, current)
-	}
-
-	return values, nil
 }
 
 func minmax(values ...int) (int, int) {

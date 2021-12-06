@@ -1,37 +1,18 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
+
+	"github.com/gverger/advent2021/utils"
+	"github.com/gverger/advent2021/utils/maps"
 )
 
-var inputFile = flag.String("input", "input.txt", "the input file")
-
 func main() {
-	flag.Parse()
-
-	if inputFile == nil {
-		fmt.Println("ERROR: empty input name")
-		os.Exit(1)
-	}
-
-	err := run(*inputFile)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		os.Exit(2)
-	}
+	utils.Main(run)
 }
 
-func run(input string) error {
-	lines, err := readLines(input)
-	if err != nil {
-		return fmt.Errorf("cannot read lines: %w", err)
-	}
-
-	values, err := StringSlice(lines).mapToInts()
+func run(lines []string) error {
+	values, err := maps.Strings(lines).ToInts()
 	if err != nil {
 		return fmt.Errorf("cannot convert data to list of ints: %w", err)
 	}
@@ -56,31 +37,4 @@ func incrCount(values []int, windowSize int) (int, error) {
 	}
 
 	return nbIncr, nil
-}
-
-type StringSlice []string
-
-func (data StringSlice) mapToInts() ([]int, error) {
-	values := make([]int, 0, len(data))
-	for _, text := range data {
-		current, err := strconv.Atoi(text)
-		if err != nil {
-			return nil, err
-		}
-
-		values = append(values, current)
-	}
-
-	return values, nil
-}
-
-func readLines(fileName string) ([]string, error) {
-	raw, err := os.ReadFile(fileName)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read %q: %w", fileName, err)
-	}
-
-	data := strings.TrimSpace(string(raw))
-
-	return strings.Split(data, "\n"), nil
 }
