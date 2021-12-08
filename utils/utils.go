@@ -48,3 +48,29 @@ func Run(fileName string, fn func(lines []string) error) error {
 
 	return fn(lines)
 }
+
+func Min(values ...int) int {
+	m, _ := MinMax(values...)
+	return m
+}
+
+func Max(values ...int) int {
+	_, m := MinMax(values...)
+	return m
+}
+
+func MinMax(values ...int) (int, int) {
+	min := values[0]
+	max := values[0]
+
+	for _, v := range values[1:] {
+		if v < min {
+			min = v
+		}
+		if v > max {
+			max = v
+		}
+	}
+
+	return min, max
+}
