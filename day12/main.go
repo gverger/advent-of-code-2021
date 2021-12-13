@@ -14,20 +14,32 @@ func main() {
 
 func run(lines []string) error {
 
-	part1(NewGraphFromInput(lines))
+	fmt.Println("Nb paths (part 1):", part1(NewGraphFromInput(lines)))
+	fmt.Println("Nb paths (part 2):", part2(NewGraphFromInput(lines)))
 
 	return nil
 }
 
-func part1(g Graph) {
+func part1(g Graph) int {
 	nb := 0
 	fn := func(_ Path) {
 		nb++
 	}
 
-	g.Paths(fn)
+	g.Part1Paths(fn)
 
-	fmt.Println("Nb Paths =", nb)
+	return nb
+}
+
+func part2(g Graph) int {
+	nb := 0
+	fn := func(_ Path) {
+		nb++
+	}
+
+	g.Part2Paths(fn)
+
+	return nb
 }
 
 type Graph struct {
@@ -45,10 +57,16 @@ func NewGraphFromInput(lines []string) Graph {
 	return g
 }
 
-func (g Graph) Paths(exec func(path Path)) {
-	p := NewPath()
+func (g Graph) Part1Paths(exec func(path Path)) {
+	p := NewPathPart1()
 	p.Append("start")
-	g.pathsFrom("start", p, exec)
+	g.pathsFrom("start", &p, exec)
+}
+
+func (g Graph) Part2Paths(exec func(path Path)) {
+	p := NewPathPart2()
+	p.Append("start")
+	g.pathsFrom("start", &p, exec)
 }
 
 func (g Graph) pathsFrom(start string, done Path, exec func(path Path)) {
@@ -80,16 +98,23 @@ func (g Graph) String() string {
 	return builder.String()
 }
 
-type Path struct {
+type Path interface {
+	Append(string)
+	Visited(string) bool
+	DeleteLast()
+	String() string
+}
+
+type PathPart1 struct {
 	visited map[string]struct{}
 	path    []string
 }
 
-func NewPath() Path {
-	return Path{visited: make(map[string]struct{}), path: make([]string, 0)}
+func NewPathPart1() PathPart1 {
+	return PathPart1{visited: make(map[string]struct{}), path: make([]string, 0)}
 }
 
-func (p Path) Visited(node string) bool {
+func (p PathPart1) Visited(node string) bool {
 	if unicode.IsUpper(rune(node[0])) {
 		return false
 	}
@@ -98,14 +123,66 @@ func (p Path) Visited(node string) bool {
 	return ok
 }
 
-func (p *Path) Append(node string) {
+func (p *PathPart1) Append(node string) {
 	p.path = append(p.path, node)
 	p.visited[node] = struct{}{}
 }
 
-func (p *Path) DeleteLast() {
+func (p *PathPart1) DeleteLast() {
 	last := p.path[len(p.path)-1]
 	delete(p.visited, last)
 
 	p.path = p.path[:len(p.path)-1]
+}
+
+func (p PathPart1) String() string {
+	return strings.Join(p.path, " --> ")
+}
+
+type PathPart2 struct {
+	visited map[string]int
+	path    []string
+}
+
+func NewPathPart2() PathPart2 {
+	return PathPart2{visited: make(map[string]int), path: make([]string, 0)}
+}
+
+func (p PathPart2) Visited(node string) bool {
+	if unicode.IsUpper(rune(node[0])) {
+		return false
+	}
+	nb := p.visited[node]
+
+	if nb == 0 {
+		return false
+	}
+
+	for _, n := range p.path {
+		if p.visited[n] == 2 && unicode.IsLower(rune(n[0])) {
+			return true
+		}
+	}
+
+	if node == "start" || node == "end" {
+		return true
+	}
+
+	return false
+}
+
+func (p *PathPart2) Append(node string) {
+	p.path = append(p.path, node)
+	p.visited[node]++
+}
+
+func (p *PathPart2) DeleteLast() {
+	last := p.path[len(p.path)-1]
+	p.visited[last]--
+
+	p.path = p.path[:len(p.path)-1]
+}
+
+func (p PathPart2) String() string {
+	return strings.Join(p.path, ",")
 }
