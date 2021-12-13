@@ -17,3 +17,15 @@ func (data Strings) ToInts() ([]int, error) {
 
 	return values, nil
 }
+
+type Ints []int
+
+func (data Ints) ToStrings() ([]string, error) {
+	values := make([]string, 0, len(data))
+	for _, text := range data {
+		current := strconv.Itoa(text)
+		values = append(values, current)
+	}
+
+	return values, nil
+}
