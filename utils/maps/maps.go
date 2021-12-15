@@ -29,3 +29,19 @@ func (data Ints) ToStrings() ([]string, error) {
 
 	return values, nil
 }
+
+type String string
+
+func (data String) ToInts() ([]int, error) {
+	values := make([]int, 0, len(data))
+	for _, text := range data {
+		current, err := strconv.Atoi(string(text))
+		if err != nil {
+			return nil, err
+		}
+
+		values = append(values, current)
+	}
+
+	return values, nil
+}
