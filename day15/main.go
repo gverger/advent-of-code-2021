@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -15,10 +14,11 @@ func main() {
 
 func run(lines []string) error {
 	m := NewMapFromInput(lines)
-	m = ExpandMap(m)
 
-	fmt.Println("MAX RISK =", m.MaxEstimatedRisk())
-	fmt.Println(m.Risk(Position{x: 0, y: 0}, Position{x: m.Width() - 1, y: m.Height() - 1}))
+	fmt.Println("Part 1:", m.Risk(Position{x: 0, y: 0}, Position{x: m.Width() - 1, y: m.Height() - 1}))
+
+	m = ExpandMap(m)
+	fmt.Println("Part 2:", m.Risk(Position{x: 0, y: 0}, Position{x: m.Width() - 1, y: m.Height() - 1}))
 
 	return nil
 }
@@ -138,6 +138,10 @@ func (pq *PQueue) Pop() Position {
 		p := pq.forRisk[r][l]
 		pq.forRisk[r] = pq.forRisk[r][:l]
 
+		if len(pq.forRisk[r]) == 0 {
+			delete(pq.forRisk, r)
+		}
+
 		return p
 	}
 
@@ -156,7 +160,23 @@ func (pq *PQueue) Push(p Position, risk int) {
 	pq.forRisk[risk] = append(pq.forRisk[risk], p)
 }
 
-func (m Map) Risk(from Position, to Position) int {
+type Dijsktra struct {
+	m       Map
+	cost    Map
+	pq      PQueue
+	visited [][]bool
+}
+
+func (d Dijsktra) IsVisited(p Position) bool {
+	return d.visited[p.y][p.x]
+}
+
+func NewDijsktra(m Map, from Position) Dijsktra {
+	visited := make([][]bool, len(m))
+	for i := range m {
+		visited[i] = make([]bool, m.Width())
+	}
+
 	cost := make(Map, len(m))
 	for i := range cost {
 		cost[i] = make([]int, len(m[i]))
@@ -168,47 +188,52 @@ func (m Map) Risk(from Position, to Position) int {
 	cost[from.y][from.x] = 0
 
 	pq := NewPQueue()
-	visited := make(map[Position]bool)
-
 	pq.Push(from, 0)
 
-	current := pq.Pop()
-	nbVisits := 1
-	nbDuplicated := 0
-
-	for current != to {
-		nbVisits++
-		visited[current] = true
-		for _, p := range current.Neighbors() {
-			if !m.IsValidPos(p) {
-				continue
-			}
-			risk := cost.At(current) + m.At(p)
-			if cost.At(p) <= risk {
-				nbDuplicated++
-				continue
-			}
-
-			cost[p.y][p.x] = risk
-
-			pq.Push(p, risk)
-		}
-		for visited[current] {
-			current = pq.Pop()
-		}
+	return Dijsktra{
+		m:       m,
+		cost:    cost,
+		pq:      pq,
+		visited: visited,
 	}
-
-	fmt.Println("Nb Visits =", nbVisits)
-	fmt.Println("Nb Duplicated =", nbDuplicated)
-	return cost.At(to)
 }
 
-func printRiskMap(m Map, seen map[Position]bool) {
+func (d *Dijsktra) nextNode() Position {
+	next := d.pq.Pop()
+	for d.IsVisited(next) {
+		next = d.pq.Pop()
+	}
+
+	return next
+}
+
+func (d *Dijsktra) Step() Position {
+	current := d.nextNode()
+
+	d.visited[current.y][current.x] = true
+	for _, p := range current.Neighbors() {
+		if !d.m.IsValidPos(p) {
+			continue
+		}
+		risk := d.cost.At(current) + d.m.At(p)
+		if d.cost.At(p) <= risk {
+			continue
+		}
+
+		d.cost[p.y][p.x] = risk
+
+		d.pq.Push(p, risk)
+	}
+
+	return current
+}
+
+func (d Dijsktra) String() string {
 	var builder strings.Builder
-	for y, l := range m {
+	for y, l := range d.m {
 		for x, r := range l {
-			if r < m.Width()*m.Height() {
-				if seen[Position{x: x, y: y}] {
+			if r < d.m.Width()*d.m.Height() {
+				if d.IsVisited(Position{x: x, y: y}) {
 					builder.WriteString("X")
 				} else {
 					builder.WriteString(".")
@@ -221,37 +246,40 @@ func printRiskMap(m Map, seen map[Position]bool) {
 	}
 	builder.WriteString("\n")
 
-	fmt.Print(builder.String())
+	return builder.String()
+}
 
+func (m Map) Risk(from Position, to Position) int {
+	d := NewDijsktra(m, from)
+	rev := NewDijsktra(m, to)
+
+	// fmt.Println(d)
+	current := from
+
+	for !rev.IsVisited(current) {
+		current = d.Step()
+		rev.Step()
+	}
+
+	// for current != to {
+	// 	current = d.Step()
+	// }
+
+	// Uncomment to see visited nodes
+	// dis := NewDijsktra(m, from)
+	//
+	// for p := range d.visited {
+	// 	dis.visited[p] = true
+	// }
+	// for p := range rev.visited {
+	// 	dis.visited[p] = true
+	// }
+	// fmt.Println(dis)
+
+	// return d.cost.At(current) + m.At(current)
+	return d.cost.At(current) + rev.cost.At(current) + m.At(to) - m.At(current)
 }
 
 func (m Map) At(p Position) int {
 	return m[p.y][p.x]
-}
-
-type Stack struct {
-	data []Position
-}
-
-func NewStack() Stack {
-	return Stack{data: make([]Position, 0)}
-}
-
-func (s *Stack) Push(value Position) {
-	s.data = append(s.data, value)
-}
-
-func (s Stack) IsEmpty() bool {
-	return len(s.data) == 0
-}
-
-var errorEmptyStack = errors.New("stack is empty")
-
-func (s *Stack) Pop() (Position, error) {
-	if len(s.data) == 0 {
-		return Position{}, errorEmptyStack
-	}
-	res := s.data[len(s.data)-1]
-	s.data = s.data[:len(s.data)-1]
-	return res, nil
 }
