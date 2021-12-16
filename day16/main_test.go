@@ -52,7 +52,7 @@ func TestDecodeHeader(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			data := packetToBinary(test.input)
+			data := DataFromHexString(test.input)
 			p, _ := decode(data)
 			assert.Equal(t, test.want.version, p.Version(), "version")
 			assert.Equal(t, test.want.typeID, p.TypeID(), "type ID")
@@ -75,34 +75,11 @@ func TestDecodeLiteral(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			data := packetToBinary(test.input)
+			data := DataFromHexString(test.input)
 			p, _ := decode(data)
 
 			require.IsType(t, LiteralPacket{}, p)
 			assert.Equal(t, test.want, p.(LiteralPacket).value, "value")
-		})
-	}
-}
-
-func TestDecodeLength(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		want  int
-	}{
-		{
-			name:  "operator packet length ID 0",
-			input: "38006F45291200",
-			want:  27,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			data := packetToBinary(test.input)
-			_, data = decodeHeader(data)
-			value, data := decodeLength0(data[1:])
-			assert.Equal(t, test.want, value, "length")
 		})
 	}
 }
@@ -152,7 +129,7 @@ func TestPart1(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			data := packetToBinary(test.input)
+			data := DataFromHexString(test.input)
 			p, _ := decode(data)
 			assert.Equal(t, test.want, p.SumVersions(), "sum versions")
 		})
@@ -217,7 +194,7 @@ func TestCompute(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			data := packetToBinary(test.input)
+			data := DataFromHexString(test.input)
 			p, _ := decode(data)
 
 			require.Equal(t, test.want, p.Compute())
