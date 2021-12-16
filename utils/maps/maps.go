@@ -1,6 +1,9 @@
 package maps
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 type Strings []string
 
@@ -44,4 +47,19 @@ func (data String) ToInts() ([]int, error) {
 	}
 
 	return values, nil
+}
+
+// "12345".ChunkEvery(2) returns -> [12 34], leaving the 5 out
+func (data String) ChunkEvery(chunkSize int) []string {
+	res := make([]string, 0)
+	var builder strings.Builder
+	for i, r := range data {
+		builder.WriteRune(r)
+		if i > 0 && (i+1)%chunkSize == 0 {
+			res = append(res, builder.String())
+			builder.Reset()
+		}
+	}
+
+	return res
 }
