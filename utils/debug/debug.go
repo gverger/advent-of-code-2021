@@ -3,19 +3,25 @@ package debug
 import "fmt"
 
 type Trace struct {
-	prefix string
-	on     bool
+	Prefix string
+	On     bool
 }
 
-func (t Trace) printf(format string, args ...interface{}) {
-	if t.on {
-		fmt.Printf(t.prefix+format+"\n", args...)
+func (t Trace) Printf(format string, args ...interface{}) {
+	if t.On {
+		fmt.Printf(t.Prefix+format, args...)
 	}
 }
 
-func (t Trace) println(args ...interface{}) {
-	if t.on {
-		fmt.Print(t.prefix)
+func (t Trace) Printfln(format string, args ...interface{}) {
+	if t.On {
+		fmt.Printf(t.Prefix+format+"\n", args...)
+	}
+}
+
+func (t Trace) Println(args ...interface{}) {
+	if t.On {
+		fmt.Print(t.Prefix)
 		fmt.Println(args...)
 	}
 }
