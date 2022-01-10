@@ -59,6 +59,13 @@ func Max(values ...int) int {
 	return m
 }
 
+func Abs(value int) int {
+	if value >= 0 {
+		return value
+	}
+	return -value
+}
+
 func MinMax(values ...int) (int, int) {
 	min := values[0]
 	max := values[0]
